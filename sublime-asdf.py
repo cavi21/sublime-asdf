@@ -8,7 +8,7 @@ import subprocess
 import sublime
 import sublime_plugin
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "Agustin"
 
 def get_settings():
@@ -18,7 +18,7 @@ def get_settings():
 def debug_print(message):
     """Print debug message if debug is enabled"""
     if get_settings().get('debug', False):
-        print(f"[sublime-asdf] {message}")
+        print("[sublime-asdf] {}".format(message))
 
 def find_tool_versions(start_path):
     """Search for .tool-versions file in current and parent directories"""
@@ -27,7 +27,7 @@ def find_tool_versions(start_path):
     while True:
         tool_versions = os.path.join(current, ".tool-versions")
         if os.path.exists(tool_versions):
-            debug_print(f"Found .tool-versions at: {tool_versions}")
+            debug_print("Found .tool-versions at: {}".format(tool_versions))
             return tool_versions
 
         parent = os.path.dirname(current)
@@ -118,71 +118,74 @@ def add_to_path(new_path):
     current_path = os.environ.get('PATH', '')
     path_parts = current_path.split(':')
     if new_path not in path_parts:
-        os.environ['PATH'] = f"{new_path}:{current_path}"
+        os.environ['PATH'] = "{}:{}".format(new_path, current_path)
 
 def setup_tool_environment(tool_name, version, asdf_dir):
     """Set up environment for a specific tool"""
     install_path = os.path.join(asdf_dir, "installs", tool_name, version)
 
     if not os.path.exists(install_path):
-        debug_print(f"Warning: {tool_name} {version} not installed at {install_path}")
+        debug_print("Warning: {} {} not installed at {}".format(tool_name, version, install_path))
         return False
 
     # Tool-specific environment setup
-    tool_configs = {
-        "golang": {
-            "env": {
-                "GOROOT": lambda: os.path.join(install_path, "go"),
-                "GOPATH": lambda: os.environ.get('GOPATH', os.path.join(os.path.expanduser("~"), "go"))
-            },
-            "paths": [
-                lambda: os.path.join(install_path, "go", "bin"),
-                lambda: os.path.join(os.environ.get('GOPATH', os.path.join(os.path.expanduser("~"), "go")), "bin")
-            ]
-        },
-        "nodejs": {
-            "env": {
-                "NODE_PATH": lambda: os.path.join(install_path, "lib", "node_modules")
-            },
-            "paths": [
-                lambda: os.path.join(install_path, "bin")
-            ]
-        },
-        "ruby": {
-            "env": {
-                "GEM_PATH": lambda: os.path.join(install_path, "lib", "ruby", "gems")
-            },
-            "paths": [
-                lambda: os.path.join(install_path, "bin")
-            ]
-        },
-        "rust": {
-            "env": {
-                "CARGO_HOME": lambda: install_path
-            },
-            "paths": [
-                lambda: os.path.join(install_path, "bin")
-            ]
-        }
-    }
+    if tool_name == "golang":
+        go_root = os.path.join(install_path, "go")
+        if os.path.exists(go_root):
+            os.environ['GOROOT'] = go_root
+            os.environ['GOPATH'] = os.environ.get('GOPATH', os.path.join(os.path.expanduser("~"), "go"))
+            # Add Go bin to PATH
+            go_bin = os.path.join(go_root, "bin")
+            if os.path.exists(go_bin):
+                add_to_path(go_bin)
+            # Also add GOPATH/bin
+            gopath_bin = os.path.join(os.environ['GOPATH'], "bin")
+            if os.path.exists(gopath_bin):
+                add_to_path(gopath_bin)
+            debug_print("Set GOROOT: {}".format(go_root))
+            debug_print("Set GOPATH: {}".format(os.environ['GOPATH']))
 
-    # Apply tool-specific configuration or use generic
-    config = tool_configs.get(tool_name, {
-        "paths": [lambda: os.path.join(install_path, "bin")]
-    })
+    elif tool_name == "nodejs":
+        node_bin = os.path.join(install_path, "bin")
+        if os.path.exists(node_bin):
+            add_to_path(node_bin)
+        node_modules = os.path.join(install_path, "lib", "node_modules")
+        if os.path.exists(node_modules):
+            os.environ['NODE_PATH'] = node_modules
+            debug_print("Set NODE_PATH: {}".format(node_modules))
 
-    # Set environment variables
-    for var_name, var_func in config.get("env", {}).items():
-        value = var_func()
-        if value and os.path.exists(value):
-            os.environ[var_name] = value
-            debug_print(f"Set {var_name}: {value}")
+    elif tool_name == "ruby":
+        ruby_bin = os.path.join(install_path, "bin")
+        if os.path.exists(ruby_bin):
+            add_to_path(ruby_bin)
+        gem_path = os.path.join(install_path, "lib", "ruby", "gems")
+        if os.path.exists(gem_path):
+            os.environ['GEM_PATH'] = gem_path
+            debug_print("Set GEM_PATH: {}".format(gem_path))
 
-    # Add paths
-    for path_func in config.get("paths", []):
-        path = path_func()
-        if path and os.path.exists(path):
-            add_to_path(path)
+    elif tool_name == "python":
+        python_bin = os.path.join(install_path, "bin")
+        if os.path.exists(python_bin):
+            add_to_path(python_bin)
+
+    elif tool_name == "elixir":
+        elixir_bin = os.path.join(install_path, "bin")
+        if os.path.exists(elixir_bin):
+            add_to_path(elixir_bin)
+
+    elif tool_name == "rust":
+        cargo_bin = os.path.join(install_path, "bin")
+        if os.path.exists(cargo_bin):
+            add_to_path(cargo_bin)
+            os.environ['CARGO_HOME'] = install_path
+            debug_print("Set CARGO_HOME: {}".format(install_path))
+
+    else:
+        # Generic setup for other tools
+        tool_bin = os.path.join(install_path, "bin")
+        if os.path.exists(tool_bin):
+            add_to_path(tool_bin)
+            debug_print("Added {} bin to PATH: {}".format(tool_name, tool_bin))
 
     return True
 
@@ -216,23 +219,23 @@ def setup_asdf_environment():
 
     # Get all installed tools
     installed_tools = get_installed_tools(asdf_dir)
-    debug_print(f"Installed tools: {installed_tools}")
+    debug_print("Installed tools: {}".format(installed_tools))
 
     # Set up each tool
     configured_tools = []
     for tool_name in installed_tools:
         version = get_tool_version(tool_name)
         if version:
-            debug_print(f"Setting up {tool_name} {version}...")
+            debug_print("Setting up {} {}...".format(tool_name, version))
             if setup_tool_environment(tool_name, version, asdf_dir):
-                configured_tools.append(f"{tool_name}@{version}")
+                configured_tools.append("{}@{}".format(tool_name, version))
 
     # Update status bar if enabled
     if get_settings().get('show_status', True) and configured_tools:
         window = sublime.active_window()
         if window:
             for view in window.views():
-                view.set_status('asdf', f"asdf: {', '.join(configured_tools)}")
+                view.set_status('asdf', "asdf: {}".format(', '.join(configured_tools)))
 
     # Verify tools if in debug mode
     if get_settings().get('debug', False):
@@ -242,7 +245,7 @@ def setup_asdf_environment():
             try:
                 result = subprocess.run(['which', cmd], capture_output=True, text=True)
                 if result.returncode == 0:
-                    print(f"  ✓ {cmd}: {result.stdout.strip()}")
+                    print("  ✓ {}: {}".format(cmd, result.stdout.strip()))
             except:
                 pass
 
@@ -266,15 +269,15 @@ class ShowAsdfEnvironmentCommand(sublime_plugin.WindowCommand):
     """Command to show current environment in console"""
     def run(self):
         print("\n[sublime-asdf] Current Environment:")
-        print(f"PATH: {os.environ.get('PATH', 'Not set')}")
-        print(f"ASDF_DIR: {os.environ.get('ASDF_DIR', 'Not set')}")
+        print("PATH: {}".format(os.environ.get('PATH', 'Not set')))
+        print("ASDF_DIR: {}".format(os.environ.get('ASDF_DIR', 'Not set')))
 
         # Show tool-specific vars
         tool_vars = ['GOROOT', 'GOPATH', 'NODE_PATH', 'GEM_PATH', 'CARGO_HOME']
         for var in tool_vars:
             value = os.environ.get(var)
             if value:
-                print(f"{var}: {value}")
+                print("{}: {}".format(var, value))
 
 class AsdfEnvironmentEventListener(sublime_plugin.EventListener):
     """Event listener for automatic environment updates"""
