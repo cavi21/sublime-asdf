@@ -1,0 +1,10 @@
+[
+    {
+        "caption": "asdf: Reload Environment",
+        "command": "reload_asdf_environment"
+    },
+    {
+        "caption": "asdf: Show Current Environment",
+        "command": "show_asdf_environment"
+    }
+]

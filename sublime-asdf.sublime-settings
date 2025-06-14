@@ -1,0 +1,13 @@
+{
+    // Enable debug output in console
+    "debug": false,
+
+    // Automatically reload environment when saving .tool-versions
+    "auto_reload_on_save": true,
+
+    // Show current tool versions in status bar
+    "show_status": true,
+
+    // Tools to verify on load (add/remove as needed)
+    "verify_tools": ["go", "node", "npm", "ruby", "python", "elixir", "cargo"]
+}

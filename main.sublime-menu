@@ -1,0 +1,47 @@
+[
+    {
+        "id": "tools",
+        "children": [
+            {
+                "caption": "-"
+            },
+            {
+                "caption": "asdf",
+                "children": [
+                    {
+                        "caption": "Reload Environment",
+                        "command": "reload_asdf_environment"
+                    },
+                    {
+                        "caption": "Show Current Environment",
+                        "command": "show_asdf_environment"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "preferences",
+        "children": [
+            {
+                "caption": "Package Settings",
+                "id": "package-settings",
+                "children": [
+                    {
+                        "caption": "sublime-asdf",
+                        "children": [
+                            {
+                                "caption": "Settings",
+                                "command": "edit_settings",
+                                "args": {
+                                    "base_file": "${packages}/sublime-asdf/sublime-asdf.sublime-settings",
+                                    "default": "{\n\t\"debug\": false,\n\t\"auto_reload_on_save\": true,\n\t\"show_status\": true\n}\n"
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+]
