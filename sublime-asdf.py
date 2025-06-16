@@ -9,7 +9,7 @@ import sublime
 import sublime_plugin
 
 __version__ = "0.1.1"
-__author__ = "Agustin"
+__author__ = "Claude (& Agustin)"
 
 def get_settings():
     """Get plugin settings"""
